@@ -3,11 +3,12 @@ use crate::messages::{
     RoutingNumber, UdpRoutingMessage, UdpTransportMessage, CURRENT_VERSION, MAX_PAYLOAD_SIZE,
 };
 use crate::{MAX_MESSAGE_SIZE, UDP};
+use core::str::FromStr;
 use ockam_core::errcode::{Kind, Origin};
 use ockam_core::{async_trait, Any, Error, LocalMessage, Result, Routed, Worker};
 use ockam_node::compat::asynchronous::resolve_peer;
 use ockam_node::Context;
-use ockam_transport_core::TransportError;
+use ockam_transport_core::{HostnamePort, TransportError};
 use std::net::SocketAddr;
 use tracing::{error, trace, warn};
 
@@ -77,7 +78,7 @@ impl Worker for UdpSenderWorker {
                 return Err(TransportError::UnknownRoute)?;
             }
 
-            resolve_peer(peer_addr.address().to_string()).await?
+            resolve_peer(&HostnamePort::from_str(peer_addr.address())?).await?
         };
 
         // Error on conditions that _might_ put the sink

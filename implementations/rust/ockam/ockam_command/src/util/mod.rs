@@ -6,10 +6,6 @@ use std::{
 
 use colorful::Colorful;
 use miette::{miette, IntoDiagnostic};
-use opentelemetry::trace::FutureExt;
-use tokio::runtime::Runtime;
-use tracing::{debug, error};
-
 use ockam::{Address, Context, NodeBuilder};
 use ockam_api::cli_state::CliState;
 use ockam_api::cli_state::CliStateError;
@@ -19,6 +15,9 @@ use ockam_api::fmt_warn;
 use ockam_core::{DenyAll, OpenTelemetryContext};
 use ockam_multiaddr::proto::{DnsAddr, Ip4, Ip6, Project, Space, Tcp};
 use ockam_multiaddr::{proto::Node, MultiAddr, Protocol};
+use opentelemetry::trace::FutureExt;
+use tokio::runtime::Runtime;
+use tracing::{debug, error};
 
 use crate::{CommandGlobalOpts, Result};
 
@@ -188,6 +187,9 @@ pub async fn clean_nodes_multiaddr(
 
 pub fn port_is_free_guard(address: &SocketAddr) -> Result<()> {
     let port = address.port();
+    if port == 0 {
+        return Ok(());
+    }
     let ip = address.ip();
     if TcpListener::bind((ip, port)).is_err() {
         Err(miette!(
