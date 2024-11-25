@@ -53,7 +53,7 @@ impl Instantiator for ProjectInstantiator {
         let (project_multiaddr, project_identifier) =
             node_manager.resolve_project(&project).await?;
 
-        debug!(addr = %project_multiaddr, "creating secure channel");
+        debug!(to = %project_multiaddr, identifier = %project_identifier, "creating secure channel");
         let tcp = multiaddr_to_route(&project_multiaddr, &node_manager.tcp_transport)
             .await
             .ok_or_else(|| {
@@ -62,7 +62,6 @@ impl Instantiator for ProjectInstantiator {
                 ))
             })?;
 
-        debug!("create a secure channel to the project {project_identifier}");
         let sc = node_manager
             .create_secure_channel_internal(
                 ctx,

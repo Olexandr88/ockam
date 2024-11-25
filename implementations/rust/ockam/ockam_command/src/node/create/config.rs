@@ -47,7 +47,7 @@ impl CreateCommand {
     /// Run the creation of a node using a node configuration
     #[instrument(skip_all)]
     pub async fn run_config(self, ctx: &Context, opts: CommandGlobalOpts) -> miette::Result<()> {
-        debug!("Running node create with a node config");
+        debug!("running node create with a node config");
         let mut node_config = self.get_node_config().await?;
         node_config.merge(&self, &opts.state).await?;
         let node_name = node_config.node.name().ok_or(miette!(
@@ -240,7 +240,7 @@ impl NodeConfig {
         node_name: &String,
         identity_name: &str,
     ) -> miette::Result<()> {
-        debug!("Running node config in foreground mode");
+        debug!("running node config in foreground mode");
         // First, run the `project enroll` commands to prepare the identity and project data
         if self.project_enroll.ticket.is_some() {
             if !self
