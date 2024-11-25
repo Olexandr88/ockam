@@ -305,15 +305,18 @@ impl CreateCommand {
             )
             .into_diagnostic()?;
         }
-        writeln!(
-            buf,
-            "\n{}",
-            fmt_log!(
-                "To see more details on this Node, run: {}",
-                color_primary(format!("ockam node show {}", node_name))
+        if !self.foreground_args.foreground {
+            writeln!(buf).into_diagnostic()?;
+            writeln!(
+                buf,
+                "{}",
+                fmt_log!(
+                    "To see more details on this Node, run: {}",
+                    color_primary(format!("ockam node show {}", node_name))
+                )
             )
-        )
-        .into_diagnostic()?;
+            .into_diagnostic()?;
+        }
         Ok(buf)
     }
 
