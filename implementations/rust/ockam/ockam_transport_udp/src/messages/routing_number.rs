@@ -2,6 +2,7 @@ use core::fmt::{Debug, Formatter};
 use minicbor::{CborLen, Decode, Encode};
 use rand::random;
 use std::cmp::Ordering;
+use std::ops::{Add, AddAssign, Sub};
 
 /// Number of the [`UdpRoutingMessage`]. Each [`UdpRoutingMessage`] is assigned a value, which
 /// helps the receiver to assemble the message. Start with a random value and uses overflowing
@@ -22,7 +23,7 @@ impl RoutingNumber {
     }
 
     pub fn increment(&mut self) {
-        self.0 = self.0.overflowing_add(1).0;
+        *self += 1;
     }
 }
 
@@ -54,6 +55,30 @@ impl Ord for RoutingNumber {
                 Ordering::Greater
             }
         }
+    }
+}
+
+impl AddAssign<u16> for RoutingNumber {
+    fn add_assign(&mut self, rhs: u16) {
+        self.0 = self.0.overflowing_add(rhs).0;
+    }
+}
+
+impl Add<u16> for RoutingNumber {
+    type Output = u16;
+
+    fn add(self, rhs: u16) -> Self::Output {
+        let mut s = self;
+        s += rhs;
+        s.0
+    }
+}
+
+impl Sub<Self> for RoutingNumber {
+    type Output = u16;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.0.overflowing_sub(rhs.0).0
     }
 }
 
