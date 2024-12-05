@@ -30,7 +30,7 @@ kafka_docker_end_to_end_encrypted_explicit_consumer() {
   consumer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member --relay kafka_consumer)
   producer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member)
 
-  export OCKAM_LOGGING=true
+  export OCKAM_LOGGING=0
   export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
@@ -98,7 +98,7 @@ kafka_docker_end_to_end_encrypted_project_relay_consumer() {
   consumer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member --relay '*')
   producer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member)
 
-  export OCKAM_LOGGING=true
+  export OCKAM_LOGGING=0
   export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
@@ -165,7 +165,7 @@ kafka_docker_end_to_end_encrypted_rust_relay_consumer() {
   consumer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member --relay '*')
   producer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member)
 
-  export OCKAM_LOGGING=true
+  export OCKAM_LOGGING=0
   export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
@@ -231,7 +231,7 @@ kafka_docker_end_to_end_encrypted_direct_connection() {
   consumer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member --relay kafka_consumer)
   producer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member)
 
-  export OCKAM_LOGGING=true
+  export OCKAM_LOGGING=0
   export OCKAM_LOG_LEVEL=trace
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
@@ -296,15 +296,15 @@ kafka_docker_end_to_end_encrypted_multiple_consumers_direct_connection() {
   consumer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member --relay kafka_consumer)
   producer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member)
 
-  export OCKAM_LOGGING=true
-  export OCKAM_LOG_LEVEL=debug
-  export RUST_BACKTRACE=full
+  export OCKAM_LOGGING=0
+  export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
   export DIRECT_CONSUMER_OUTPUT="$ADMIN_HOME/direct_consumer.log"
 
   # Vault Node
   setup_home_dir
+  run_success "$OCKAM" project enroll "${vault_ticket}"
   run_success "$OCKAM" node create vault --tcp-listener-address 127.0.0.1:${inlet_port}
   run_success "$OCKAM" service start remote-proxy-vault --vault-name default
 
@@ -318,13 +318,12 @@ kafka_docker_end_to_end_encrypted_multiple_consumers_direct_connection() {
   run_success "$OCKAM" vault create \
     --route /ip4/127.0.0.1/tcp/${inlet_port}/secure/api/service/remote_proxy_vault \
     --identity local-identity remote-vault
-  run_success "$OCKAM" identity create remote-identity --vault remote-vault
-  run_success "$OCKAM" project enroll --identity remote-identity "${consumer_ticket}"
-  run_success "$OCKAM" node create consumer --identity remote-identity
+  run_success "$OCKAM" node create consumer
 
   run_success "$OCKAM" kafka-outlet create --bootstrap-server 127.0.0.1:19092
   run_success "$OCKAM" kafka-inlet create --from 29092 \
     --avoid-publishing \
+    --vault remote-vault \
     --to self
   run_success "$OCKAM" relay create kafka_consumer
 
@@ -338,13 +337,12 @@ kafka_docker_end_to_end_encrypted_multiple_consumers_direct_connection() {
   run_success "$OCKAM" vault create \
     --route /ip4/127.0.0.1/tcp/${inlet_port}/secure/api/service/remote_proxy_vault \
     --identity local-identity remote-vault
-  run_success "$OCKAM" identity create remote-identity --vault remote-vault
-  run_success "$OCKAM" project enroll --identity remote-identity "${consumer_ticket}"
-  run_success "$OCKAM" node create consumer --identity remote-identity
+  run_success "$OCKAM" node create consumer
 
   run_success "$OCKAM" kafka-outlet create --bootstrap-server 127.0.0.1:19092
   run_success "$OCKAM" kafka-inlet create --from 39092 \
     --avoid-publishing \
+    --vault remote-vault \
     --to self
   run_success "$OCKAM" relay create kafka_consumer
 
@@ -361,8 +359,8 @@ kafka_docker_end_to_end_encrypted_multiple_consumers_direct_connection() {
 
   # Producer
   setup_home_dir
-  run_success "$OCKAM" node create producer
   run_success "$OCKAM" project enroll "${producer_ticket}"
+  run_success "$OCKAM" node create producer
   run_success "$OCKAM" kafka-outlet create --bootstrap-server 127.0.0.1:19092
   run_success "$OCKAM" kafka-inlet create --from 49092 \
     --to self \
@@ -401,8 +399,8 @@ kafka_docker_end_to_end_encrypted_multiple_consumers_direct_connection() {
 kafka_docker_end_to_end_encrypted_single_gateway() {
   # Admin
   export ADMIN_HOME="$OCKAM_HOME"
-  export OCKAM_LOGGING=true
-  export OCKAM_LOG_LEVEL=debug
+  export OCKAM_LOGGING=0
+  export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
   export DIRECT_CONSUMER_OUTPUT="$ADMIN_HOME/direct_consumer.log"
@@ -435,13 +433,13 @@ kafka_docker_end_to_end_encrypted_single_gateway() {
 @test "kafka - docker - end-to-end-encrypted - single gateway - redpanda" {
   export KAFKA_COMPOSE_FILE="redpanda-docker-compose.yaml"
   start_kafka
-  kafka_docker_end_to_end_encrypted_direct_connection
+  kafka_docker_end_to_end_encrypted_single_gateway
 }
 
 @test "kafka - docker - end-to-end-encrypted - single gateway - apache" {
   export KAFKA_COMPOSE_FILE="apache-docker-compose.yaml"
   start_kafka
-  kafka_docker_end_to_end_encrypted_direct_connection
+  kafka_docker_end_to_end_encrypted_single_gateway
 }
 
 kafka_docker_cleartext() {
@@ -453,7 +451,7 @@ kafka_docker_cleartext() {
   consumer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member)
   producer_ticket=$($OCKAM project ticket --usage-count 10 --attribute role=member)
 
-  export OCKAM_LOGGING=true
+  export OCKAM_LOGGING=0
   export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
@@ -516,7 +514,7 @@ kafka_docker_cleartext() {
 kafka_docker_end_to_end_encrypted_offset_decryption() {
   # Admin
   export ADMIN_HOME="$OCKAM_HOME"
-  export OCKAM_LOGGING=true
+  export OCKAM_LOGGING=0
   export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"
@@ -579,7 +577,7 @@ kafka_docker_end_to_end_encrypted_offset_decryption() {
 kafka_docker_encrypt_only_two_fields() {
   # Admin
   export ADMIN_HOME="$OCKAM_HOME"
-  export OCKAM_LOGGING=true
+  export OCKAM_LOGGING=0
   export OCKAM_LOG_LEVEL=info
 
   export CONSUMER_OUTPUT="$ADMIN_HOME/consumer.log"

@@ -13,24 +13,24 @@ use std::fmt::Display;
 #[rustfmt::skip]
 #[cbor(map)]
 pub struct StartServiceRequest<T> {
-    #[n(1)] addr: String,
-    #[n(2)] req: T,
+    #[n(1)] pub address: String,
+    #[n(2)] pub request: T,
 }
 
 impl<T> StartServiceRequest<T> {
-    pub fn new<S: Into<String>>(req: T, addr: S) -> Self {
+    pub fn new<S: Into<String>>(request: T, address: S) -> Self {
         Self {
-            addr: addr.into(),
-            req,
+            address: address.into(),
+            request,
         }
     }
 
     pub fn address(&self) -> &str {
-        &self.addr
+        &self.address
     }
 
     pub fn request(&self) -> &T {
-        &self.req
+        &self.request
     }
 }
 
@@ -90,16 +90,17 @@ impl StartKafkaOutletRequest {
 #[rustfmt::skip]
 #[cbor(map)]
 pub struct StartKafkaInletRequest {
-    #[n(1)] bind_address: HostnamePort,
-    #[n(2)] brokers_port_range: (u16, u16),
-    #[n(3)] kafka_outlet_route: MultiAddr,
-    #[n(4)] encrypt_content: bool,
-    #[n(5)] consumer_resolution: ConsumerResolution,
-    #[n(6)] consumer_publishing: ConsumerPublishing,
-    #[n(7)] inlet_policy_expression: Option<PolicyExpression>,
-    #[n(8)] consumer_policy_expression: Option<PolicyExpression>,
-    #[n(9)] producer_policy_expression: Option<PolicyExpression>,
-    #[n(10)] encrypted_fields: Vec<String>,
+    #[n(1)] pub bind_address: HostnamePort,
+    #[n(2)] pub brokers_port_range: (u16, u16),
+    #[n(3)] pub outlet_node_multiaddr: MultiAddr,
+    #[n(4)] pub encrypt_content: bool,
+    #[n(5)] pub consumer_resolution: ConsumerResolution,
+    #[n(6)] pub consumer_publishing: ConsumerPublishing,
+    #[n(7)] pub inlet_policy_expression: Option<PolicyExpression>,
+    #[n(8)] pub consumer_policy_expression: Option<PolicyExpression>,
+    #[n(9)] pub producer_policy_expression: Option<PolicyExpression>,
+    #[n(10)] pub encrypted_fields: Vec<String>,
+    #[n(11)] pub vault: Option<String>,
 }
 
 impl StartKafkaInletRequest {
@@ -115,11 +116,12 @@ impl StartKafkaInletRequest {
         inlet_policy_expression: Option<PolicyExpression>,
         consumer_policy_expression: Option<PolicyExpression>,
         producer_policy_expression: Option<PolicyExpression>,
+        vault: Option<String>,
     ) -> Self {
         Self {
             bind_address,
             brokers_port_range: brokers_port_range.into(),
-            kafka_outlet_route,
+            outlet_node_multiaddr: kafka_outlet_route,
             encrypt_content,
             consumer_resolution,
             consumer_publishing,
@@ -127,45 +129,8 @@ impl StartKafkaInletRequest {
             consumer_policy_expression,
             producer_policy_expression,
             encrypted_fields,
+            vault,
         }
-    }
-
-    pub fn bind_address(&self) -> HostnamePort {
-        self.bind_address.clone()
-    }
-    pub fn brokers_port_range(&self) -> (u16, u16) {
-        self.brokers_port_range
-    }
-    pub fn project_route(&self) -> MultiAddr {
-        self.kafka_outlet_route.clone()
-    }
-
-    pub fn encrypt_content(&self) -> bool {
-        self.encrypt_content
-    }
-
-    pub fn encrypted_fields(&self) -> Vec<String> {
-        self.encrypted_fields.clone()
-    }
-
-    pub fn consumer_resolution(&self) -> ConsumerResolution {
-        self.consumer_resolution.clone()
-    }
-
-    pub fn consumer_publishing(&self) -> ConsumerPublishing {
-        self.consumer_publishing.clone()
-    }
-
-    pub fn inlet_policy_expression(&self) -> Option<PolicyExpression> {
-        self.inlet_policy_expression.clone()
-    }
-
-    pub fn consumer_policy_expression(&self) -> Option<PolicyExpression> {
-        self.consumer_policy_expression.clone()
-    }
-
-    pub fn producer_policy_expression(&self) -> Option<PolicyExpression> {
-        self.producer_policy_expression.clone()
     }
 }
 
