@@ -15,7 +15,7 @@ impl CliState {
             .build();
         Ok(SecureChannels::from_identities(
             identities,
-            Arc::new(SecureChannelSqlxDatabase::new(self.database())),
+            SecureChannelSqlxDatabase::make_repository(self.database()),
         ))
     }
 }

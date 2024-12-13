@@ -1,6 +1,6 @@
 use crate::error::ApiError;
 use crate::nodes::connection::{Changes, ConnectionBuilder, Instantiator};
-use crate::{multiaddr_to_route, route_to_multiaddr};
+use crate::{RemoteMultiaddrResolver, RemoteMultiaddrResolverConnection, ReverseLocalConverter};
 
 use crate::nodes::NodeManager;
 use ockam_core::{async_trait, Error, Route};
@@ -36,35 +36,35 @@ impl Instantiator for PlainTcpInstantiator {
     ) -> Result<Changes, Error> {
         let (before, tcp_piece, after) = extracted;
 
-        let mut tcp = multiaddr_to_route(&tcp_piece, &node_manager.tcp_transport)
-            .await
-            .ok_or_else(|| {
-                ApiError::core(format!(
-                    "Couldn't convert MultiAddr to route: tcp_piece={tcp_piece}"
-                ))
-            })?;
+        let mut tcp = RemoteMultiaddrResolver::default()
+            .with_tcp(node_manager.tcp_transport.clone())
+            .resolve(&tcp_piece)
+            .await?;
 
-        let multiaddr = route_to_multiaddr(&tcp.route).ok_or_else(|| {
-            ApiError::core(format!(
-                "Couldn't convert route to MultiAddr: tcp_route={}",
-                &tcp.route
-            ))
-        })?;
+        let multiaddr = ReverseLocalConverter::convert_route(&tcp.route)?;
 
         let current_multiaddr = ConnectionBuilder::combine(before, multiaddr, after)?;
 
         // since we only pass the piece regarding tcp
         // tcp_connection should exist
         let tcp_connection = tcp
-            .tcp_connection
+            .connection
             .take()
             .ok_or_else(|| ApiError::core("TCP connection should be set"))?;
+
+        let tcp_connection = match tcp_connection {
+            RemoteMultiaddrResolverConnection::Tcp(tcp_connection) => tcp_connection,
+            RemoteMultiaddrResolverConnection::Udp(_) => {
+                return Err(ApiError::core("TCP connection should be set"));
+            }
+        };
 
         Ok(Changes {
             current_multiaddr,
             flow_control_id: tcp.flow_control_id,
             secure_channel_encryptors: vec![],
             tcp_connection: Some(tcp_connection),
+            udp_bind: None,
         })
     }
 }

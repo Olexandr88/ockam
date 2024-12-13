@@ -1,5 +1,18 @@
 use std::time::Duration;
 
+use crate::nodes::models::secure_channel::CreateSecureChannelListenerRequest;
+use crate::nodes::models::secure_channel::CreateSecureChannelRequest;
+use crate::nodes::models::secure_channel::DeleteSecureChannelListenerRequest;
+use crate::nodes::models::secure_channel::DeleteSecureChannelRequest;
+use crate::nodes::models::secure_channel::ShowSecureChannelListenerRequest;
+use crate::nodes::models::secure_channel::ShowSecureChannelRequest;
+use crate::nodes::models::secure_channel::{
+    CreateSecureChannelResponse, DeleteSecureChannelListenerResponse, DeleteSecureChannelResponse,
+    ShowSecureChannelResponse,
+};
+use crate::nodes::registry::SecureChannelInfo;
+use crate::nodes::service::default_address::DefaultAddress;
+use crate::nodes::{NodeManager, NodeManagerWorker};
 use ockam::identity::models::CredentialAndPurposeKey;
 use ockam::identity::Vault;
 use ockam::identity::{
@@ -14,20 +27,6 @@ use ockam_core::compat::sync::Arc;
 use ockam_core::errcode::{Kind, Origin};
 use ockam_multiaddr::MultiAddr;
 use ockam_node::Context;
-
-use crate::nodes::models::secure_channel::CreateSecureChannelListenerRequest;
-use crate::nodes::models::secure_channel::CreateSecureChannelRequest;
-use crate::nodes::models::secure_channel::DeleteSecureChannelListenerRequest;
-use crate::nodes::models::secure_channel::DeleteSecureChannelRequest;
-use crate::nodes::models::secure_channel::ShowSecureChannelListenerRequest;
-use crate::nodes::models::secure_channel::ShowSecureChannelRequest;
-use crate::nodes::models::secure_channel::{
-    CreateSecureChannelResponse, DeleteSecureChannelListenerResponse, DeleteSecureChannelResponse,
-    ShowSecureChannelResponse,
-};
-use crate::nodes::registry::SecureChannelInfo;
-use crate::nodes::service::default_address::DefaultAddress;
-use crate::nodes::{NodeManager, NodeManagerWorker};
 
 #[derive(PartialOrd, PartialEq, Debug)]
 pub enum SecureChannelType {
@@ -352,8 +351,11 @@ impl NodeManager {
         let vault = self.cli_state.make_vault(named_vault).await?;
         let secure_channels = self.build_secure_channels(vault).await?;
 
-        let options =
-            SecureChannelListenerOptions::new().as_consumer(&self.api_transport_flow_control_id);
+        let mut options = SecureChannelListenerOptions::new();
+
+        for api_flow_control_id in &self.api_transport_flow_control_ids {
+            options = options.as_consumer(api_flow_control_id);
+        }
 
         let options = match authorized_identifiers {
             Some(ids) => options.with_trust_policy(TrustMultiIdentifiersPolicy::new(ids)),
@@ -468,7 +470,7 @@ impl NodeManager {
         Ok(Arc::new(SecureChannels::new(
             identities,
             self.secure_channels.secure_channel_registry(),
-            Arc::new(SecureChannelSqlxDatabase::new(self.cli_state.database())),
+            SecureChannelSqlxDatabase::make_repository(self.cli_state.database()),
         )))
     }
 }

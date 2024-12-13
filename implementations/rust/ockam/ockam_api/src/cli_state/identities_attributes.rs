@@ -18,9 +18,6 @@ impl CliState {
         &self,
         node_name: &str,
     ) -> Arc<dyn IdentityAttributesRepository> {
-        Arc::new(IdentityAttributesSqlxDatabase::new(
-            self.database(),
-            node_name,
-        ))
+        IdentityAttributesSqlxDatabase::make_repository(self.database(), node_name)
     }
 }

@@ -73,9 +73,10 @@ impl Authority {
             SqlxDatabase::create(&configuration.database_configuration).await?
         };
 
-        let members = Arc::new(AuthorityMembersSqlxDatabase::new(database.clone()));
-        let tokens = Arc::new(AuthorityEnrollmentTokenSqlxDatabase::new(database.clone()));
-        let secure_channel_repository = Arc::new(SecureChannelSqlxDatabase::new(database.clone()));
+        let members = AuthorityMembersSqlxDatabase::make_repository(database.clone());
+        let tokens = AuthorityEnrollmentTokenSqlxDatabase::make_repository(database.clone());
+        let secure_channel_repository =
+            SecureChannelSqlxDatabase::make_repository(database.clone());
 
         Self::bootstrap_repository(members.clone(), configuration).await?;
 
